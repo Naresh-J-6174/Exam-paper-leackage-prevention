@@ -1,0 +1,129 @@
+[
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "uint8", "name": "role", "type": "uint8" }
+    ],
+    "name": "assignRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "examCode", "type": "string" },
+      { "internalType": "bytes32", "name": "fileHash", "type": "bytes32" },
+      { "internalType": "uint256", "name": "releaseAt", "type": "uint256" }
+    ],
+    "name": "registerPaper",
+    "outputs": [{ "internalType": "bytes32", "name": "key", "type": "bytes32" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "recomputedHash", "type": "bytes32" }
+    ],
+    "name": "verifyPaper",
+    "outputs": [{ "internalType": "bool", "name": "matched", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "key", "type": "bytes32" }],
+    "name": "releasePaper",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "internalType": "string", "name": "reason", "type": "string" }
+    ],
+    "name": "revokePaper",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "key", "type": "bytes32" }],
+    "name": "getPaper",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "bytes32", "name": "fileHash", "type": "bytes32" },
+          { "internalType": "address", "name": "uploadedBy", "type": "address" },
+          { "internalType": "uint256", "name": "uploadedAt", "type": "uint256" },
+          { "internalType": "uint256", "name": "releaseAt", "type": "uint256" },
+          { "internalType": "bool", "name": "released", "type": "bool" },
+          { "internalType": "bool", "name": "revoked", "type": "bool" },
+          { "internalType": "string", "name": "examCode", "type": "string" }
+        ],
+        "internalType": "struct ExamPaperRegistry.Paper",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalPapers",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "indexed": false, "internalType": "string", "name": "examCode", "type": "string" },
+      { "indexed": false, "internalType": "bytes32", "name": "fileHash", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "uploadedBy", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "releaseAt", "type": "uint256" }
+    ],
+    "name": "PaperRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "indexed": false, "internalType": "bool", "name": "matched", "type": "bool" },
+      { "indexed": true, "internalType": "address", "name": "verifiedBy", "type": "address" }
+    ],
+    "name": "PaperVerified",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "releasedBy", "type": "address" }
+    ],
+    "name": "PaperReleased",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "bytes32", "name": "key", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "revokedBy", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "reason", "type": "string" }
+    ],
+    "name": "PaperRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "account", "type": "address" },
+      { "indexed": false, "internalType": "uint8", "name": "role", "type": "uint8" }
+    ],
+    "name": "RoleAssigned",
+    "type": "event"
+  }
+]

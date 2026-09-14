@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+blockchain/node_modules/
+blockchain/cache/
+blockchain/artifacts/
+
+# next.js
+.next/
+out/
+
+# env files
+.env
+.env.local
+.env*.local
+blockchain/.env
+
+# misc
+.DS_Store
+*.log
