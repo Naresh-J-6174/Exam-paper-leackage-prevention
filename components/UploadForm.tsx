@@ -16,11 +16,11 @@ export default function UploadForm({ onUploaded }: { onUploaded: () => void }) {
     setLoading(true);
     setMessage(null);
 
-    const form = new FormData();
-    form.append("file", file);
-    form.append("examCode", examCode);
-    form.append("title", title);
-    form.append("releaseAt", releaseAt);
+const form = new FormData();
+form.append("file", file);
+form.append("examCode", examCode);
+form.append("title", title);
+form.append("releaseAt", new Date(releaseAt).toISOString());
 
     const res = await fetch("/api/upload", { method: "POST", body: form });
     const data = await res.json();
