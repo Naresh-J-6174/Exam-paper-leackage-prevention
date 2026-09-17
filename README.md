@@ -13,6 +13,12 @@ the mismatch is detected automatically and release is blocked. The system
 supports three roles — Admin, Teacher, and Invigilator — each with their own
 dashboard and permissions, plus a full audit log of every action taken.
 
+## Demo Links: https://drive.google.com/file/d/17Z1JzJm_AQrceUItn7-dpoApl1C7zpOD/view?usp=sharing
+##vercel link :: https://exam-paper-leackage-prevention-20.vercel.app/
+- **Google Drive (project files / documentation):** 
+- **Video demonstration:**
+  - for teacher use teacher@gmail.com and pasword : welcome
+  - for invigilator use invigilator@gmail.com and password : welcome
 ## Technologies / Tools Used
 
 **Frontend**
@@ -163,7 +169,4 @@ The status badge changes to **RELEASED** and a **Download** button appears.
 
 ---
 
-## Demo Links: https://drive.google.com/file/d/17Z1JzJm_AQrceUItn7-dpoApl1C7zpOD/view?usp=sharing
-##vercel link :: https://exam-paper-leackage-prevention-20.vercel.app/
-- **Google Drive (project files / documentation):** 
-- **Video demonstration:**
+
