@@ -1,132 +1,170 @@
-# Ledger Paper — Blockchain-Secured Exam Paper Distribution
+# Ledger Paper — Blockchain-Secured Exam Paper Distribution System
 
-Prevents question-paper leakage by combining:
+## Description
 
-- **Encrypted cloud storage** (Supabase Storage) — papers are AES-256-GCM
-  encrypted before they're ever uploaded.
-- **A blockchain seal** (a Solidity smart contract on a public testnet) —
-  the SHA-256 fingerprint of every uploaded file is written on-chain and
-  can never be changed or quietly deleted afterward.
-- **Verify-before-release** — an invigilator can only unlock a paper after
-  the app re-hashes the stored file and confirms it still matches the
-  on-chain seal. Any tampering (a leaked, edited, or swapped file) is
-  caught automatically and release is blocked.
+Ledger Paper is a full-stack web application that prevents exam question-paper
+leakage by combining encrypted cloud storage with blockchain-based tamper
+detection. Every uploaded question paper is encrypted and stored privately in
+the cloud, while a cryptographic fingerprint (hash) of that file is written
+to a public blockchain. Before a paper is ever released for an exam, the
+system re-computes the file's fingerprint and compares it against the
+immutable on-chain record — if even a single byte of the file has changed,
+the mismatch is detected automatically and release is blocked. The system
+supports three roles — Admin, Teacher, and Invigilator — each with their own
+dashboard and permissions, plus a full audit log of every action taken.
 
-## How it prevents leakage
+## Technologies / Tools Used
 
-| Step | What happens |
-|---|---|
-| 1. Teacher uploads | File is encrypted server-side, then stored in a private Supabase bucket. |
-| 2. Seal is written | SHA-256 hash of the encrypted file + exam code + release time is sent to `registerPaper()` on the smart contract. |
-| 3. Time-lock | The contract refuses to let anyone call `releasePaper()` before the scheduled release time. |
-| 4. Verify | Anyone can call `verifyPaper()` to re-check a file's hash against the immutable on-chain record — this is how tampering is detected. |
-| 5. Release | Invigilator triggers release; the app re-verifies automatically first and blocks release on any mismatch. |
-| 6. Revoke | If leakage is suspected, an admin can revoke a paper, which permanently blocks release/download even if someone tries to bypass the UI. |
-| 7. Audit trail | Every verify/release/download/revoke is logged with who did it and when (`access_log` table). |
+**Frontend**
+- Next.js 14 (React 18, App Router)
+- Tailwind CSS
+- TypeScript
 
-## Project layout
+**Backend**
+- Next.js API Routes (Node.js runtime)
+- Node.js `crypto` module — AES-256-GCM file encryption and SHA-256 hashing
+- ethers.js — communication with the smart contract
+
+**Blockchain**
+- Solidity 0.8.24 (smart contract: `ExamPaperRegistry.sol`)
+- Hardhat (compiling and deploying the contract)
+- Polygon Amoy Testnet (public test blockchain)
+- MetaMask (test wallet used to deploy the contract and sign transactions)
+
+**Database & Storage**
+- Supabase (PostgreSQL database + file Storage bucket + Authentication)
+- Row-Level Security (RLS) policies for role-based data access
+
+**Deployment**
+- Git & GitHub (version control)
+- Vercel (hosting the live web application)
+vercel link :: https://exam-paper-leackage-prevention-20.vercel.app/
+## Steps to Install Dependencies and Run the Project
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+```
+
+### 2. Set up Supabase/cloude
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Open the SQL Editor and run the entire contents of `supabase/schema.sql`.
+3. From Project Settings → API, copy the Project URL, `anon` key, and
+   `service_role` key.
+
+### 3. Deploy the smart contract
+```bash
+cd blockchain
+npm install
+```
+Copy `blockchain/.env.example` to `blockchain/.env` and fill in a test
+wallet's private key (`DEPLOYER_PRIVATE_KEY`) and an RPC URL for Polygon
+Amoy. Get free test tokens from a Polygon Amoy faucet, then deploy:
+```bash
+npm run deploy:amoy
+```
+Copy the printed contract address.
+
+### 4. Configure and run the web app
+```bash
+cd ..
+```
+Copy `.env.example` to `.env.local` and fill in:
+- Supabase URL, anon key, and service role key
+- The blockchain RPC URL, the same private key used to deploy, and the
+  deployed contract address
+- A generated file-encryption key:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+
+Install and run:
+```bash
+npm install
+npm run dev
+```
+Open `http://localhost:3000` in a browser.
+
+### 5. Create the first admin account
+Sign up through the app's login page, then in the Supabase SQL Editor run:
+```sql
+update profiles set role = 'admin' where id = 'your-user-uuid-from-auth.users';
+```
+
+## Project Structure / Modules and Their Purpose
 
 ```
 exam-paper-blockchain/
-├── blockchain/            # Hardhat project — the smart contract (deployed separately, NOT on Vercel)
-│   ├── contracts/ExamPaperRegistry.sol
-│   └── scripts/deploy.js
-├── app/                    # Next.js 14 app (this is what deploys to Vercel)
-│   ├── login/
-│   ├── dashboard/{admin,teacher,invigilator}/
-│   └── api/{upload,verify,release,revoke,papers}/
-├── lib/                    # crypto.ts, blockchain.ts, supabase clients
-├── supabase/schema.sql     # run this once in the Supabase SQL editor
-└── middleware.ts           # role-based route protection
+├── blockchain/                     Smart contract project (separate from the web app)
+│   ├── contracts/ExamPaperRegistry.sol   The on-chain registry: stores each paper's
+│   │                                      hash, release time, and role permissions
+│   └── scripts/deploy.js                 Deploys the contract to Polygon Amoy
+│
+├── app/                             Next.js web application (deployed to Vercel)
+│   ├── login/                            Sign in / sign up page
+│   ├── dashboard/admin/                  Admin dashboard: assign roles, revoke/delete papers
+│   ├── dashboard/teacher/                Teacher dashboard: upload question papers
+│   ├── dashboard/invigilator/            Invigilator dashboard: verify and release papers
+│   └── api/
+│       ├── upload/                       Encrypts a file, stores it, seals its hash on-chain
+│       ├── verify/                       Re-hashes a stored file and checks it against the chain
+│       ├── release/                      Re-verifies, then unlocks a paper for download
+│       ├── revoke/                       Admin-only: permanently flags a paper as compromised
+│       └── papers/                       Lists papers; per-paper download and delete endpoints
+│
+├── lib/
+│   ├── crypto.ts                         AES-256-GCM encryption/decryption, SHA-256 hashing
+│   ├── blockchain.ts                     ethers.js functions that call the smart contract
+│   ├── supabaseClient.ts                 Browser-side Supabase client
+│   └── supabaseServer.ts                 Server-side Supabase client(s)
+│
+├── components/
+│   ├── UploadForm.tsx                    Paper upload form (teacher dashboard)
+│   ├── PapersTable.tsx                   Shared table showing all papers with role-based actions
+│   └── DashboardShell.tsx                Shared page header/sign-out for all dashboards
+│
+├── middleware.ts                    Protects dashboard routes and enforces role-based access
+├── supabase/schema.sql              Database tables, security policies, and storage bucket setup
+└── README.md                        This file
 ```
 
-## 1. Set up Supabase
+## Sample Input and Output
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run the entire contents of `supabase/schema.sql`.
-   This creates the `profiles`, `exams`, `papers`, `access_log` tables, RLS
-   policies, and a private `exam-papers` storage bucket.
-3. From **Project Settings → API**, copy your Project URL, `anon` key, and
-   `service_role` key — you'll need them below.
-4. The first user who signs up should be manually promoted to `admin`:
-   ```sql
-   update profiles set role = 'admin' where id = 'the-users-uuid-from-auth.users';
-   ```
-   After that, use the Admin dashboard's "Assign roles" form for everyone else.
+**Sample input (Teacher dashboard — upload form):**
+| Field | Example value |
+|---|---|
+| Exam code | `23CS103` |
+| Title | `Data Structures — Midterm` |
+| Release at | `2026-09-15 20:54` |
+| Question paper file | `midterm.pdf` |
 
-## 2. Deploy the smart contract (one-time)
+**Sample output (after clicking "Encrypt, upload & seal on-chain"):**
+```
+Paper encrypted, stored, and sealed on-chain.
+Chain transaction hash: 0x585063CbdD7776bBA729c684900F5C0544644C3A...
+```
+The paper then appears in the ledger with a status badge of **SEALED** and
+its SHA-256 fingerprint displayed.
 
-You need a free testnet wallet and some free test tokens — no real money required.
-
-1. `cd blockchain && npm install`
-2. Create a MetaMask (or any) wallet **for testing only** and export its
-   private key.
-3. Get free test MATIC from the [Polygon Amoy faucet](https://faucet.polygon.technology/).
-4. Copy `blockchain/.env.example` to `blockchain/.env` and fill in
-   `DEPLOYER_PRIVATE_KEY` (and optionally a dedicated `AMOY_RPC_URL` from
-   [Alchemy](https://www.alchemy.com/) for reliability).
-5. Deploy:
-   ```bash
-   npm run deploy:amoy
-   ```
-6. Copy the printed contract address — you'll set it as `CONTRACT_ADDRESS`
-   in the Next.js app's environment variables.
-
-The same wallet's private key becomes the app's `BACKEND_PRIVATE_KEY` — the
-app uses this one wallet to sign all on-chain writes, so teachers and
-invigilators only ever need an email/password login, not a crypto wallet.
-
-## 3. Configure the Next.js app
-
-1. Copy `.env.example` to `.env.local` in the project root.
-2. Fill in the Supabase values from step 1 and the blockchain values from
-   step 2.
-3. Generate a file-encryption key:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
-   Put it in `FILE_ENCRYPTION_KEY`.
-4. Install and run locally:
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-## 4. Push to GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: blockchain-secured exam paper system"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git push -u origin main
+**Sample output (Invigilator dashboard — "Verify hash"):**
+```
+Fingerprint matches the on-chain seal. The file is intact.
+```
+If the stored file had been altered in any way, the output instead reads:
+```
+MISMATCH — the stored file does not match its on-chain seal. Do not release it.
 ```
 
-`.env.local` and `blockchain/.env` are already git-ignored — never commit
-real keys.
+**Sample output (Invigilator dashboard — "Verify & release", after release time has passed):**
+```
+Paper verified and released.
+```
+The status badge changes to **RELEASED** and a **Download** button appears.
 
-## 5. Deploy to Vercel
+---
 
-1. Go to [vercel.com/new](https://vercel.com/new) and import your GitHub repo.
-2. Vercel auto-detects Next.js — leave the build settings as default. (The
-   `blockchain/` folder is ignored by the Next.js build; it's a separate
-   Hardhat project you only run locally/once to deploy the contract.)
-3. Under **Environment Variables**, add every variable from your
-   `.env.local` (Supabase URL/keys, `RPC_URL`, `BACKEND_PRIVATE_KEY`,
-   `CONTRACT_ADDRESS`, `FILE_ENCRYPTION_KEY`).
-4. Deploy. Vercel gives you a live URL.
+## Demo Links: https://drive.google.com/file/d/17Z1JzJm_AQrceUItn7-dpoApl1C7zpOD/view?usp=sharing
 
-## Security notes for a real deployment
-
-- The demo uses one shared backend wallet to keep the UX simple (no
-  MetaMask required for staff). For a production system handling real
-  exams, consider giving each role its own wallet and having the frontend
-  sign transactions directly, so no single backend key can act as every role.
-- Rotate `FILE_ENCRYPTION_KEY` and `BACKEND_PRIVATE_KEY` if either ever
-  leaks — old encrypted files won't decrypt with a new key, so keep the
-  old key archived securely if you need to read old papers later.
-- This is built on public testnets for a free, gas-fee-free demo. For a
-  real deployment, evaluate whether a permissioned/private blockchain
-  (e.g., Hyperledger Fabric) or a mainnet deployment better fits your
-  institution's trust and cost requirements.
+- **Google Drive (project files / documentation):** 
+- **Video demonstration:**
